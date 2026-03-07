@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/avif" href="/assets/logo.avif" />
+  <title>ShakkiKatti</title>
+  <style>
+    @keyframes shakkiLogoIn {
+      from {
+        opacity: 0;
+        transform: translateY(-24px) scale(0.92);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes shakkiLogoOut {
+      from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+
+      to {
+        opacity: 0;
+        transform: translateY(-24px) scale(0.92);
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #2c2c2c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #game-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    canvas {
+      display: block;
+      background: #3a3a3a;
+    }
+
+    #loading-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      visibility: hidden;
+      z-index: 10;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+    }
+
+    .loader {
+      position: relative;
+      width: 51px;
+      height: 51px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #1a1a2e;
+      -webkit-mask: radial-gradient(transparent 18px, black 18px);
+      mask: radial-gradient(transparent 18px, black 18px);
+    }
+
+    .ring {
+      width: 51px;
+      height: 51px;
+      border-radius: 50%;
+      border: 10px solid rgba(255, 255, 255, 0.12);
+      box-sizing: border-box;
+    }
+
+    .arc-orbit {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 51px;
+      height: 51px;
+      border-radius: 50%;
+      box-sizing: border-box;
+      z-index: 1;
+      animation: orbit 2.5s linear infinite;
+    }
+
+    .arc-orbit::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 12.5px solid transparent;
+      border-top-color: #7377C5;
+      box-sizing: border-box;
+    }
+
+@keyframes orbit {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div id="loading-overlay">
+      <div class="loader">
+        <div class="ring"></div>
+        <div class="arc-orbit"></div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>
