@@ -2,6 +2,8 @@ import { Scene } from "../../engine/Scene";
 import { AIAlgorithm } from "../gamelogic/players/ai";
 import { validateFEN } from "../gamelogic/fen";
 import { Colors } from "../ui/colors";
+import { getTranslations, type Language } from "../ui/translations";
+import { loadLanguage, saveLanguage } from "./languageStorage";
 import type { GameConfig, PlayerConfig } from "./GameplayScene";
 import { loadPlaySettings, savePlaySettings } from "./playSettingsStorage";
 
@@ -14,6 +16,8 @@ import { loadPlaySettings, savePlaySettings } from "./playSettingsStorage";
 export class MainMenuScene extends Scene {
   private overlay: HTMLDivElement | undefined;
   private container: HTMLDivElement | undefined;
+  private footerElements: HTMLElement[] = [];
+  private language: Language = loadLanguage();
 
   /** Fires when the player has configured a game and pressed "Play". */
   onGameStart: ((config: GameConfig) => void) | undefined;
@@ -54,7 +58,7 @@ export class MainMenuScene extends Scene {
     this.overlay.appendChild(this.container);
 
     const version = document.createElement("span");
-    version.textContent = "v1.1.0";
+    version.textContent = "v1.2.0";
     Object.assign(version.style, {
       position: "absolute",
       bottom: "10px",
@@ -66,6 +70,7 @@ export class MainMenuScene extends Scene {
       zIndex: "1",
     });
     this.overlay.appendChild(version);
+    this.footerElements.push(version);
 
     const credit = document.createElement("span");
     credit.textContent = "Game by Jari Hanhela";
@@ -80,6 +85,7 @@ export class MainMenuScene extends Scene {
       zIndex: "1",
     });
     this.overlay.appendChild(credit);
+    this.footerElements.push(credit);
 
     const sourceLink = document.createElement("a");
     sourceLink.textContent = "Source code";
@@ -106,10 +112,11 @@ export class MainMenuScene extends Scene {
       sourceLink.style.color = Colors.TEXT_HINT;
     });
     this.overlay.appendChild(sourceLink);
+    this.footerElements.push(sourceLink);
 
     const gameContainer = document.getElementById("game-container") ?? document.body;
     gameContainer.appendChild(this.overlay);
-    this.showMainMenu();
+    this.showLanguageSelect();
   }
 
   hide(): void {
@@ -117,6 +124,7 @@ export class MainMenuScene extends Scene {
       this.overlay.remove();
       this.overlay = undefined;
       this.container = undefined;
+      this.footerElements = [];
     }
   }
 
@@ -155,8 +163,21 @@ export class MainMenuScene extends Scene {
 
   // ---- Screen builders ----
 
-  private showMainMenu(): void {
+  private hideFooter(): void {
+    for (const el of this.footerElements) {
+      el.style.display = "none";
+    }
+  }
+
+  private showFooter(): void {
+    for (const el of this.footerElements) {
+      el.style.display = "";
+    }
+  }
+
+  private showLanguageSelect(): void {
     if (!this.container) return;
+    this.showFooter();
 
     const logo = document.createElement("img");
     logo.src = "/assets/logo.avif";
@@ -169,14 +190,28 @@ export class MainMenuScene extends Scene {
     });
     this.container.appendChild(logo);
 
-    const playBtn = this.makePrimaryButton("Play", "0.35");
-    playBtn.addEventListener("click", () => this.transitionTo(() => this.showPlayConfig()));
-    this.container.appendChild(playBtn);
+    const fiBtn = this.makePrimaryButton("Suomeksi", "0.35");
+    fiBtn.addEventListener("click", () => {
+      this.language = "fi";
+      saveLanguage("fi");
+      this.transitionTo(() => this.showPlayConfig());
+    });
+    this.container.appendChild(fiBtn);
+
+    const enBtn = this.makePrimaryButton("In English", "0.5");
+    enBtn.addEventListener("click", () => {
+      this.language = "en";
+      saveLanguage("en");
+      this.transitionTo(() => this.showPlayConfig());
+    });
+    this.container.appendChild(enBtn);
   }
 
   private showPlayConfig(): void {
     if (!this.container) return;
+    this.hideFooter();
 
+    const t = getTranslations(this.language);
     const { white: whiteConfig, black: blackConfig } = loadPlaySettings();
 
     let delay = 0.05;
@@ -188,15 +223,15 @@ export class MainMenuScene extends Scene {
 
     // Player rows
     const saveSettings = () => savePlaySettings(whiteConfig, blackConfig);
-    const whiteRow = this.makePlayerRow("White", whiteConfig, nextDelay(), saveSettings);
+    const whiteRow = this.makePlayerRow(t.playerWhite, whiteConfig, nextDelay(), saveSettings);
     this.container.appendChild(whiteRow);
 
-    const blackRow = this.makePlayerRow("Black", blackConfig, nextDelay(), saveSettings);
+    const blackRow = this.makePlayerRow(t.playerBlack, blackConfig, nextDelay(), saveSettings);
     this.container.appendChild(blackRow);
 
     // FEN input (optional)
     const fenLabel = document.createElement("p");
-    fenLabel.textContent = "Starting position (FEN)";
+    fenLabel.textContent = t.fenLabel;
     Object.assign(fenLabel.style, {
       color: Colors.TEXT_SECONDARY,
       fontSize: "14px",
@@ -242,7 +277,7 @@ export class MainMenuScene extends Scene {
       animation: `shakkiLogoIn 0.6s ease-out ${nextDelay()}s both`,
     });
 
-    const playBtn = this.makePrimaryButton("Play", "0");
+    const playBtn = this.makePrimaryButton(t.btnPlay, "0");
     playBtn.style.animation = "none"; // parent div handles animation
     playBtn.style.minWidth = "120px";
     playBtn.addEventListener("click", () => {
@@ -250,7 +285,7 @@ export class MainMenuScene extends Scene {
       if (fen) {
         const result = validateFEN(fen);
         if (!result.valid) {
-          fenError.textContent = result.error ?? "Invalid FEN.";
+          fenError.textContent = result.error ?? t.fenInvalid;
           fenError.style.display = "block";
           return;
         }
@@ -261,9 +296,9 @@ export class MainMenuScene extends Scene {
     });
     btnRow.appendChild(playBtn);
 
-    const backBtn = this.makeSecondaryButton("Back");
+    const backBtn = this.makeSecondaryButton(t.btnBack);
     backBtn.addEventListener("click", () =>
-      this.transitionTo(() => this.showMainMenu()),
+      this.transitionTo(() => this.showLanguageSelect()),
     );
     btnRow.appendChild(backBtn);
 
@@ -278,7 +313,7 @@ export class MainMenuScene extends Scene {
     }
     const hint = document.createElement("p");
     hint.className = "esc-hint";
-    hint.textContent = "You can open a menu during the game by pressing Esc";
+    hint.textContent = t.escHint;
     Object.assign(hint.style, {
       color: Colors.TEXT_HINT,
       fontSize: "13px",
@@ -343,9 +378,9 @@ export class MainMenuScene extends Scene {
     });
 
     const humanBtn = document.createElement("button");
-    humanBtn.textContent = "Human";
+    humanBtn.textContent = getTranslations(this.language).toggleHuman;
     const aiBtn = document.createElement("button");
-    aiBtn.textContent = "AI";
+    aiBtn.textContent = getTranslations(this.language).toggleAI;
 
     const applyToggleStyle = (btn: HTMLButtonElement, active: boolean) => {
       Object.assign(btn.style, {
@@ -374,8 +409,8 @@ export class MainMenuScene extends Scene {
     });
 
     const algorithms: { label: string; value: AIAlgorithm }[] = [
-      { label: "BestResponse 2014 (easy)", value: AIAlgorithm.BEST_RESPONSE },
-      { label: "AlphaSonne 2026 (medium)", value: AIAlgorithm.ALPHA_SONNE },
+      { label: getTranslations(this.language).algoEasy, value: AIAlgorithm.BEST_RESPONSE },
+      { label: getTranslations(this.language).algoMedium, value: AIAlgorithm.ALPHA_SONNE },
     ];
     for (const { label: algoLabel, value } of algorithms) {
       const opt = document.createElement("option");

@@ -13,6 +13,8 @@ import type { ChessMouse } from "../inputdevices/ChessMouse";
 import { AIAlgorithm } from "../gamelogic/players/ai";
 import { generateFEN, parseFEN } from "../gamelogic/fen";
 import { Colors } from "../ui/colors";
+import { getTranslations } from "../ui/translations";
+import { loadLanguage } from "./languageStorage";
 import { PieceName } from "../gamelogic/pieces/types";
 import { Bishop } from "../gamelogic/pieces/Bishop";
 import { King } from "../gamelogic/pieces/King";
@@ -137,6 +139,8 @@ export class GameplayScene extends Scene {
     this.isPaused = true;
     if (this.loadingOverlay) this.loadingOverlay.style.visibility = "hidden";
 
+    const t = getTranslations(loadLanguage());
+
     // Outer wrapper fills the game container and uses flexbox to center the popup.
     // The popup itself carries the animation, avoiding a transform conflict with
     // the translate(-50%, -50%) centering trick.
@@ -169,7 +173,7 @@ export class GameplayScene extends Scene {
     });
 
     const title = document.createElement("p");
-    title.textContent = "Game Paused";
+    title.textContent = t.pauseTitle;
     Object.assign(title.style, {
       color: Colors.TEXT_PRIMARY,
       fontSize: "20px",
@@ -181,18 +185,18 @@ export class GameplayScene extends Scene {
     const btnRow = document.createElement("div");
     Object.assign(btnRow.style, { display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" });
 
-    const copyBtn = this.createButton("Copy FEN to Clipboard");
+    const copyBtn = this.createButton(t.btnCopyFen);
     copyBtn.addEventListener("click", () => this.copyFENToClipboard(fenCopiedMsg));
     btnRow.appendChild(copyBtn);
 
-    const closeBtn = this.createButton("Close");
+    const closeBtn = this.createButton(t.btnClose);
     closeBtn.addEventListener("click", () => this.closePauseMenu());
     btnRow.appendChild(closeBtn);
 
     popup.appendChild(btnRow);
 
     const fenCopiedMsg = document.createElement("p");
-    fenCopiedMsg.textContent = "FEN copied to clipboard";
+    fenCopiedMsg.textContent = t.fenCopied;
     Object.assign(fenCopiedMsg.style, {
       color: Colors.TEXT_SECONDARY,
       fontSize: "13px",
@@ -350,17 +354,19 @@ export class GameplayScene extends Scene {
     if (this.gameSession.stateName !== GameSessionStateName.GAME_OVER)
       return;
 
+    const t = getTranslations(loadLanguage());
+
     let text: string;
     if (this.gameSession.drawReason === "threefold") {
-      text = "Draw by threefold repetition!";
+      text = t.drawThreefold;
     } else if (this.gameSession.drawReason === "seventy-five-move") {
-      text = "Draw by 75-move rule!";
+      text = t.draw75Move;
     } else if (this.gameSession.drawReason !== null) {
-      text = "Draw!";
+      text = t.draw;
     } else if (this.gameSession.winner === 0) {
-      text = "Stalemate!";
+      text = t.stalemate;
     } else {
-      text = `${this.gameSession.winnerSide} won the match!`;
+      text = this.gameSession.winner === 1 ? t.whiteWon : t.blackWon;
     }
 
     ctx.save();
